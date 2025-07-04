@@ -62,6 +62,39 @@ unsigned int indices[] =
 
 /* SHADERS */
 /* ------------------ */
+const char *VshaderSource =
+  "#version 440 core\n"
+  "layout (location = 0) in vec3 aPos;\n"
+  "layout (location = 1) in vec2 aTexCoord;\n"
+
+  "out vec2 TexCoord;\n"
+
+  "uniform mat4 model;\n"
+  "uniform mat4 view;\n"
+  "uniform mat4 projection;\n"
+
+  "void main()\n"
+  "{\n"
+	  "gl_Position = projection * view * model * vec4(aPos, 1.0);\n"
+	  "TexCoord = vec2(aTexCoord.x, aTexCoord.y);\n"
+  "}\0";
+
+const char *FshaderSource =
+  "#version 330 core\n"
+  "out vec4 FragColor;\n"
+
+  "in vec2 TexCoord;\n"
+
+  // texture samplers
+  "uniform sampler2D texture1;\n"
+  "uniform sampler2D texture2;\n"
+
+  "void main()\n"
+  "{\n"
+    // linearly interpolate between both textures (80% container, 20% awesomeface)
+    "FragColor = mix(texture(texture1, TexCoord), texture(texture2, TexCoord), 0.2);\n"
+  "}\0";
+/*
 const char *VshaderSource = 
     "#version 440 core\n"
     "layout (location = 0) in vec3 aPos;\n"
@@ -82,6 +115,7 @@ const char *FshaderSource =
     "{\n"
     "   FragColor = vec4(ourColor, 1.0);\n"
     "}\n\0";
+*/
 /* --------------------- */
 
 //bool SDL_GL_MakeCurrent(SDL_Window *window, SDL_GLContext context);
@@ -194,6 +228,21 @@ int main(int argc, char* argv[])
     glUniformMatrix4fv(transformLoc, 1, GL_FALSE, (float*)&transform);
     */
     glUseProgram(INTs.shaderProgram);
+
+    mat4 model = { 1.0f };
+    mat4 view = { 1.0f };
+    mat4 projection = { 1.0f };
+
+    model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    view  = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+    projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+    // retrieve the matrix uniform locations
+    unsigned int modelLoc = glGetUniformLocation(ourShader.ID, "model");
+    unsigned int viewLoc  = glGetUniformLocation(ourShader.ID, "view");
+    // pass them to the shaders (3 different ways)
+    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, &view[0][0]);
+
     glBindVertexArray(INTs.VAO); 
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
