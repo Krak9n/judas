@@ -1,0 +1,6 @@
+engine:
+1. sdl: 
+  handling windows, audio etc
+2. opengl rendering video
+3. nuklear for ui
+4. cglm for math
