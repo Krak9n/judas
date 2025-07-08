@@ -4,12 +4,16 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <chrono>
 
 #include "shader_m.h"
 //#include "get_shaders.h"
 
 #include <string.h>
-#include "cglm/cglm.h"
+
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+//#include "cglm/cglm.h"
 
 // firstly declaration and only then importing
 #define STB_IMAGE_IMPLEMENTATION
@@ -28,9 +32,7 @@ struct Global
 struct integers
 {
   unsigned int VBO, VAO, EBO;
-  unsigned int shaderProgram, Vshader, Fshader;
   unsigned int texture1, texture2;
-  unsigned int shader_program;
 } INTs;
 
 struct loggs1
@@ -40,11 +42,6 @@ struct loggs1
   char infoLog[512]; 
 } loggs;
 
-struct vectors
-{
-  vec3 to_tr;
-} v;
-
 const unsigned int height = 900;
 const unsigned int width = 1500;
 
@@ -53,16 +50,21 @@ const unsigned int width = 1500;
 float vertices[] =
 {
   //position        //colors         //texture coordinates
-  0.0f, 0.8f, 0.0f, 1.0f, 0.0f, 0.0f, // top
-  -0.4f, 0.0f, 0.0f, 0.0f, 0.4f, 0.0f, //lef
-  0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, //bottom
-  0.4f, 0.0f, 0.0f, 0.2f, 0.08f, 0.0f, //right
+  /* PLANE */
+
+  0.5f, 0.0f, 0.5f, 1.0f, 0.0f, 0.0f, 
+  -0.5f, 0.0f, 0.5f, 0.0f, 1.0f, 0.0f, 
+  0.0f, 0.0f, -0.5f, 0.0f, 0.0f, 1.0f, 
+  0.0f, 0.8f, 0.0f, 0.0f, 1.0f, 0.0f,
 };
 
 unsigned int indices[] =
 {
-  0, 1, 2,
-  0, 3, 2
+  0, 1, 2, //plane
+  0, 1, 3, // behind
+  0, 2, 3, // the right one
+  1, 2, 3// the left one
+
 };
 /* ------------------- */
 
@@ -70,8 +72,8 @@ unsigned int indices[] =
 /* ------------------ */
 const char *VshaderSource =
   "#version 440\n"
-  "layout (location = 0) in vec3 aPos;\n"
-  "layout (location = 1) in vec3 inColor;\n"
+  "layout (location = 0) in vec4 aPos;\n"
+  "layout (location = 1) in vec4 inColor;\n"
 
   "out vec4 exColor;\n"
 
@@ -88,9 +90,9 @@ const char *VshaderSource =
 
 const char *FshaderSource =
   "#version 440\n"
-  "out vec4 outColor;\n"
+  "in vec4 exColor;\n"
   
-  "in vec4 exColor\n"
+  "out vec4 outColor;\n"
   
   "void main()\n"
   "{\n"
@@ -99,12 +101,11 @@ const char *FshaderSource =
 /* --------------------- */
 
 //bool SDL_GL_MakeCurrent(SDL_Window *window, SDL_GLContext context);
-void shader_get();
-void linking_shaders();
-char* read_shader_source(const char* filePath);
-GLuint compile_shader(GLenum type, const char* source);
-void init_shaders();
-
+//void shader_get();
+//void linking_shaders();
+//char* read_shader_source(const char* filePath);
+//GLuint compile_shader(GLenum type, const char* source);
+//void init_shaders();
 
 int main(int argc, char* argv[]) 
 {
@@ -147,11 +148,16 @@ int main(int argc, char* argv[])
     printf("failed to initialize glad\n");
     return -1;
   }
+  
+  // configure global opengl state
+  // -----------------------------
+  glEnable(GL_DEPTH_TEST);
+  unsigned int shader_program = load_glsl_shaders("src/shaders/frag.glsl", "src/shaders/vert.glsl");
 
   // generating vertex and fragment shaders
-  shader_get();
+  //shader_get();
   //linking ones before
-  linking_shaders();
+  //linking_shaders();
 
   //binding all three vao, ebo and vbo
   glGenVertexArrays(1, &INTs.VAO);
@@ -166,14 +172,15 @@ int main(int argc, char* argv[])
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
   
   //postions
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
   glEnableVertexAttribArray(0);
   
   //color of vertices
-  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3* sizeof(float)));
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)(3* sizeof(float)));
   glEnableVertexAttribArray(1);
   
   //init_shaders();
+  use_shader(shader_program);
 
   while (!done) 
   {
@@ -190,36 +197,56 @@ int main(int argc, char* argv[])
           done = true;
         }
     }
-
+    
     glClearColor(0,0,0,1);
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    
+    use_shader(shader_program);
 
     // rotating stuff 
-    mat4 model = { 1.0f };
-    mat4 view = { 1.0f };
-    mat4 projection = { 1.0f };
-    glm_mat4_identity(model);
-    glm_mat4_identity(view);
-    glm_mat4_identity(projection);
+    mat4 model =  {
+      {1.0f, 0.0f, 0.0f, 0.0f},
+      {0.0f, 1.0f, 0.0f, 0.0f},
+      {0.0f, 0.0f, 1.0f, 0.0f},
+      {0.0f, 0.0f, 0.0f, 1.0f}
+    };
+    mat4 view =  {
+      {1.0f, 0.0f, 0.0f, 0.0f},
+      {0.0f, 1.0f, 0.0f, 0.0f},
+      {0.0f, 0.0f, 1.0f, 0.0f},
+      {0.0f, 0.0f, 0.0f, 1.0f}
+    };
+    mat4 projection =  {
+      {1.0f, 0.0f, 0.0f, 0.0f},
+      {0.0f, 1.0f, 0.0f, 0.0f},
+      {0.0f, 0.0f, 1.0f, 0.0f},
+      {0.0f, 0.0f, 0.0f, 1.0f}
+    };
     
-    vec3 v2 = { 0.0f, 0.0f, 0.0f };
-    vec3 v = { 1.0f, 0.0f, 0.0f };
-    glm_rotate(model, glm_rad(-55.0f), v);
+    uint32_t currTime = SDL_GetTicks();
+    float elapsedTime = (currTime - startTime) / 1000.0; 
+
+    vec3 ve2 = { 0.5f, 1.0f, 0.0f };
+    glm_vec3_normalize(ve2);
+    glm_rotate_make(model, elapsedTime, ve2);
     
     vec3 vv = { 0.0f, 0.0f, -3.0f };
-    glm_translate_to(view, vv, view);
+    glm_vec3_normalize(vv);
+    glm_translate_make(view, vv);
     
-    glm_perspective(glm_rad(45.0f), (float)width / (float)height, 0.1f, 100.f, projection);
+    glm_perspective_resize((float)(width/height), projection);
+    
     // retrieve the matrix uniform locations
-    unsigned int modelLoc = glGetUniformLocation(INTs.shaderProgram, "model");
-    unsigned int viewLoc  = glGetUniformLocation(INTs.shaderProgram, "view");
+    unsigned int modelLoc = glGetUniformLocation(shader_program, "model");
+    unsigned int viewLoc  = glGetUniformLocation(shader_program, "view");
+    
     // pass them to the shaders (3 different ways)
     glUniformMatrix4fv(modelLoc, 1, GL_FALSE, (float*)&model);
-    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, &view[0][0]);
-    
+    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, (float*)&view);
+    set_mat_4(shader_program, "projection", projection);
 
     glBindVertexArray(INTs.VAO); 
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    glDrawArrays(GL_TRIANGLES, 0, 12);
 
     SDL_GL_SwapWindow(window);
     // Do game logic, present a frame, etc.
@@ -228,12 +255,14 @@ int main(int argc, char* argv[])
   // Close and destroy the window
   SDL_GL_DestroyContext(glcontext);  
   SDL_DestroyWindow(window);
-
+  glDeleteVertexArrays(1, &INTs.VAO);
+  glDeleteBuffers(1, &INTs.VBO);
+  
   // Clean up
   SDL_Quit();
   return 0;
 }
-
+/*
 void shader_get()
 {
   // vertex shader
@@ -286,4 +315,4 @@ void linking_shaders()
   glDeleteShader(INTs.Fshader);
 
 }
-
+*/
