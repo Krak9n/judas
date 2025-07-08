@@ -7,13 +7,12 @@
 #include <chrono>
 
 #include "shader_m.h"
-//#include "get_shaders.h"
 
 #include <string.h>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-//#include "cglm/cglm.h"
+#include "cglm/cglm.h"
 
 // firstly declaration and only then importing
 #define STB_IMAGE_IMPLEMENTATION
@@ -172,11 +171,11 @@ int main(int argc, char* argv[])
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
   
   //postions
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
   glEnableVertexAttribArray(0);
   
   //color of vertices
-  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)(3* sizeof(float)));
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3* sizeof(float)));
   glEnableVertexAttribArray(1);
   
   //init_shaders();
@@ -246,7 +245,7 @@ int main(int argc, char* argv[])
     set_mat_4(shader_program, "projection", projection);
 
     glBindVertexArray(INTs.VAO); 
-    glDrawArrays(GL_TRIANGLES, 0, 12);
+    glDrawElements(GL_TRIANGLES, 12, GL_UNSIGNED_INT, 0);
 
     SDL_GL_SwapWindow(window);
     // Do game logic, present a frame, etc.

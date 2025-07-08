@@ -20,7 +20,7 @@ _DEPS3 = glm.hpp
 _DEPS4 = matrix_transform.hpp type_ptr.hpp
 DEPS = $(patsubst %,$(IDIR1)/%,$(_DEPS),$(IDIR4)/%,$(_DEPS2), $(IDIR5)/%,$(_DEPS3),$(IDIR6)/%,$(_DEPS4))
 
-_OBJ = master.cpp glad.c ui/bip.c
+_OBJ = master.cpp glad.c ui/main.c
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
 
