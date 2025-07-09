@@ -15,7 +15,7 @@ LIBS=-lSDL3
 # for opengl
 LIBS2=-lstdc++ -lglfw -lGL -lX11 -lpthread -lXrandr -lXi -ldl -lm
 _DEPS = stb_image.h 
-_DEPS2 = shader_m.h 
+_DEPS2 = shader_m.h shader2.h
 _DEPS3 = glm.hpp 
 _DEPS4 = matrix_transform.hpp type_ptr.hpp
 DEPS = $(patsubst %,$(IDIR1)/%,$(_DEPS),$(IDIR4)/%,$(_DEPS2), $(IDIR5)/%,$(_DEPS3),$(IDIR6)/%,$(_DEPS4))
