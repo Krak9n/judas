@@ -1,6 +1,6 @@
 #include <glad/glad.h>
-#include <SDL3/SDL.h>
-#include <SDL3/SDL_main.h>
+#include <GLFW/glfw3.h>
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -20,8 +20,6 @@
 #define MAX_CHARACTERS 128 // ASCII range
 #define MAX_SIZE 100
 
-SDL_Event event;
-
 struct integers
 {
   unsigned int VBO, VAO, EBO;
@@ -37,13 +35,26 @@ struct loggs1
 const unsigned int height = 900;
 const unsigned int width = 1500;
 
+/* CAMERA */
+glm::vec3 cameraPos   = glm::vec3(0.0f, 0.0f,  3.0f);
+glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+glm::vec3 cameraUp    = glm::vec3(0.0f, 1.0f,  0.0f);
+
+bool firstMouse = true;
+float yaw   = -90.0f;	// yaw is initialized to -90.0 degrees since a yaw of 0.0 results in a direction vector pointing to the right so we initially rotate a bit to the left.
+float pitch =  0.0f;
+float lastX =  800.0f / 2.0;
+float lastY =  600.0 / 2.0;
+float fov   =  45.0f;
+// timing
+float deltaTime = 0.0f;	// time between current frame and last frame
+float lastFrame = 0.0f;
+
 /* OBJECT PARAMETRS */
 /* ----------- */
 float vertices[] =
 {
   //position        //colors         //texture coordinates
-  /* PLANE */
-
   0.5f, 0.0f, 0.5f, 1.0f, 0.0f, 0.0f, // far right bottom
   -0.5f, 0.0f, 0.5f, 0.0f, 1.0f, 0.0f, // far left bottom
   0.0f, 0.0f, -0.5f, 0.0f, 0.0f, 1.0f, // bottom face to me
@@ -74,49 +85,49 @@ glm::vec3 posTriangles[] =
 };
 /* ------------------- */
 
+void init_glfw();
+void processInput(GLFWwindow *window);
+void framebuffer_size_callback(GLFWwindow* window, int width, int heigth);
+void freetype_loader();
+
+static void cursor_position_callback(GLFWwindow* window, double xposIn, double yposIn);
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
+
 int main(int argc, char* argv[]) 
 {
-
-  SDL_Window *window;                  
-  bool done = false;
-
-  // initializing SDL3
-  SDL_Init(SDL_INIT_VIDEO);            
+  double xpos, ypos;
+  // initializing GLFW
+  init_glfw();
+  
   // Create an application window with the following settings:
-  window = SDL_CreateWindow(
-      "judas",                  
-      width,                       
-      height,               
-      SDL_WINDOW_OPENGL                
-  );
-  
-  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
-  SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-  // Check that the window was successfully created
-  if (window == NULL) 
+  GLFWwindow* window = glfwCreateWindow(height, width, "judas", NULL, NULL);  
+  if(window == NULL)
   {
-      // In the case that the window could not be made...
-      SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not create window: %s\n", SDL_GetError());
-      return 1;
+    std::cout << "failed to create glfw\n";
+    glfwTerminate();
+    return -1;
   }
-  
-  // an OpenGL context
-  SDL_GLContext glcontext = SDL_GL_CreateContext(window); 
-  // making window current
-  bool SDL_GL_MakeCurrent(SDL_Window *window, SDL_GLContext context);
+  glfwMakeContextCurrent(window);
+  glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+  glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+
+  // to be notified when cursor moves over the window
+  glfwSetCursorPosCallback(window, cursor_position_callback);
+  glfwSetScrollCallback(window, scroll_callback);
+  glfwSwapInterval(1);
+  glfwSetCursorPos(window, xpos, ypos);
 
   // GLAD initializing
-  if(!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress))
+  if(!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
   {
-    printf("failed to initialize glad\n");
+    std::cout << "failed to initialize glad\n";
     return -1;
   }
 
   // configure global opengl state
   // -----------------------------
   glEnable(GL_DEPTH_TEST);
-  Shader ourShader("src/shaders/vert.glsl", "src/shaders/frag.glsl");
+  Shader myShader("src/shaders/vert.glsl", "src/shaders/frag.glsl");
   
   //binding all three vao, ebo and vbo
   glGenVertexArrays(1, &INTs.VAO);
@@ -139,32 +150,27 @@ int main(int argc, char* argv[])
   glEnableVertexAttribArray(1);
   
   //init_shaders();
-  ourShader.use();
+  myShader.use();
   
-  while (!done) 
+  while (!glfwWindowShouldClose(window)) 
   {
-    while (SDL_PollEvent(&event)) 
-    {
-        if (event.type == SDL_EVENT_QUIT) 
-        {
-          done = true;
-        }
-    }
+    processInput(window);
+
+    float currentFrame = static_cast<float>(glfwGetTime());
+    deltaTime = currentFrame - lastFrame;
+    lastFrame = currentFrame;
     
     glClearColor(0,0,0,1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
-    ourShader.use();
+    myShader.use();
     
-    // rotating stuff 
-    glm::mat4 view =  glm::mat4(1.0f);
-    glm::mat4 projection = glm::mat4(1.0f);   
+    glm::mat4 projection = glm::perspective(glm::radians(fov), (float)(width/height), 0.1f, 100.0f);
+    myShader.setMat4("projection", projection); 
 
-    projection = glm::perspective(glm::radians(45.0f), (float)(width/height), 0.1f, 100.0f);
-    view       = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
-    // pass transformation matrices to the shader
-    ourShader.setMat4("projection", projection); // note: currently we set the projection matrix each frame, but since the projection matrix rarely changes it's often best practice to set it outside the main loop only once.
-    ourShader.setMat4("view", view);
+    // rotating stuff 
+    glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+    myShader.setMat4("view", view);
 
     // render 
     glBindVertexArray(INTs.VAO); 
@@ -174,24 +180,129 @@ int main(int argc, char* argv[])
       glm::mat4 model = glm::mat4(1.0f);
       model = glm::translate(model, posTriangles[i]);
       float angle = 20.0f + i;
-      model = glm::rotate(model, (SDL_GetTicks() / 100.0f) * glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
-      ourShader.setMat4("model", model);
+      model = glm::rotate(model, (float)(glfwGetTime() + i) * glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+      myShader.setMat4("model", model);
 
       glDrawElements(GL_TRIANGLES, 12, GL_UNSIGNED_INT, 0);
     }
-   
-    SDL_GL_SwapWindow(window);
+
+    glfwSwapBuffers(window);
+    glfwPollEvents();
     // Do game logic, present a frame, etc.
   }
-
+  
+  glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+  glfwDestroyWindow(window);
+ 
   // Close and destroy the window
-  SDL_GL_DestroyContext(glcontext);  
-  SDL_DestroyWindow(window);
   glDeleteVertexArrays(1, &INTs.VAO);
   glDeleteBuffers(1, &INTs.VBO);
   
   // Clean up
-  SDL_Quit();
+  glfwTerminate();
+  
   return 0;
 }
+
+// return here 
+static void cursor_position_callback(GLFWwindow* window, double xposIn, double yposIn)
+{
+  glfwGetCursorPos(window, &xposIn, &yposIn);
+  std::cout << "mouse position is,\nx: " << xposIn << "\ny:" << yposIn;
+  
+  float xpos = static_cast<float>(xposIn);
+  float ypos = static_cast<float>(yposIn);
+
+  if (firstMouse)
+  {
+      lastX = xpos;
+      lastY = ypos;
+      firstMouse = false;
+  }
+
+  float xoffset = xpos - lastX;
+  float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
+  lastX = xpos;
+  lastY = ypos;
+
+  float sensitivity = 0.1f;
+  xoffset *= sensitivity;
+  yoffset *= sensitivity;
+
+  yaw += xoffset;
+  pitch += yoffset;
+
+  if (pitch > 89.0f)
+      pitch = 89.0f;
+  if (pitch < -89.0f)
+      pitch = -89.0f;
+
+  glm::vec3 front;
+  front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+  front.y = sin(glm::radians(pitch));
+  front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+  cameraFront = glm::normalize(front);
+
+}
+
+void processInput(GLFWwindow *window)
+{
+  float cameraSpeed = static_cast<float>(2.5 * deltaTime);
+  if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+  {
+    glfwSetWindowShouldClose(window, true);
+  }
+
+  // moving around
+  if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+  {
+    cameraPos += cameraSpeed * cameraFront;
+  }
+  if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+  {
+    cameraPos -= cameraSpeed * cameraFront;
+  }
+  if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+  {
+    cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+  }
+  if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+  {
+    cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+  }
+  if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+  {
+    cameraPos += cameraUp / 50.0f;
+  }
+
+}
+
+void framebuffer_size_callback(GLFWwindow* window, int width, int heigth)
+{
+  glViewport(0, 0, width, heigth);
+}
+
+// ----------------------------------------------------------------------
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+{
+  fov -= (float)yoffset;
+  if (fov < 1.0f)
+  {
+    fov = 1.0f;
+  }
+  if (fov > 45.0f)
+  {
+    fov = 45.0f;
+  }
+}
+
+void init_glfw()
+{
+  glfwInit();  
+
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
+}
+
 

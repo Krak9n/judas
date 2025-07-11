@@ -1,8 +1,9 @@
 engine:
-1. sdl: 
-  handling windows, audio etc
+1. glfw 
+  handling windows, keyboard 
 2. opengl rendering video
 3. nuklear for ui
 4. cglm for math
 5. emscripten for compiling C into WebAssembly
 6. renderdoc for debugging 
+7. for audio handling
