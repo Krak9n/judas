@@ -208,7 +208,7 @@ int main(int argc, char* argv[])
 static void cursor_position_callback(GLFWwindow* window, double xposIn, double yposIn)
 {
   glfwGetCursorPos(window, &xposIn, &yposIn);
-  std::cout << "mouse position is,\nx: " << xposIn << "\ny:" << yposIn;
+  std::cout << "\nmouse position is,\nx: " << xposIn << "\ny: " << yposIn;
   
   float xpos = static_cast<float>(xposIn);
   float ypos = static_cast<float>(yposIn);

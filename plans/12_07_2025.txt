@@ -1,0 +1,4 @@
+[] add lightining
+[] make small level
+  perhaps smth like just array of objects would
+  be nice to have.
