@@ -1,24 +1,15 @@
-IDIR1=./include/stb/ 
-IDIR2=./include/glad/
-IDIR4=./src/shaders/
-IDIR5=./include/glm/
-IDIR6=./include/glm/gtc/
-CC=gcc
-CFLAGS=-I$(IDIR1) -I$(IDIR5) -I$(IDIR2) -I.$(IDIR3) -I$(IDIR4) 
+IDIR=./src/ -I./include/
+CC=g++
+CFLAGS=-std=c++17 -O2 -I$(IDIR)
 
 ODIR=src
-# for sdl3
-LIBS=-lSDL3 
 
 # for opengl
-LIBS2=-lstdc++ -lglfw -lGL -lX11 -lpthread -lXrandr -lXi -ldl -lm
-_DEPS = stb_image.h 
-_DEPS2 = shader2.h
-_DEPS3 = glm.hpp 
-_DEPS4 = matrix_transform.hpp type_ptr.hpp
-DEPS = $(patsubst %,$(IDIR1)/%,$(_DEPS),$(IDIR4)/%,$(_DEPS2), $(IDIR5)/%,$(_DEPS3),$(IDIR6)/%,$(_DEPS4))
+LIBS=-lstdc++ -lglfw -lGL -lvulkan -lXxf86vm -lX11 -lpthread -lXrandr -lXi -ldl -lm
+_DEPS = deps.h utils.h window/*.hpp ui/nuklear/nuklear.h stb/stb_image.h shaders/shader2.h glm/glm.hpp glmm/gtc/matrix_transform.hpp glm/gtc/type_ptr.hpp
+DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 
-_OBJ = master.cpp glad.c ui/main.c
+_OBJ = main.cpp glad.c ui/main.c
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
 
@@ -26,7 +17,7 @@ $(ODIR)/%.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 engine: $(OBJ)
-	$(CC) -o $@ $^ $(CFLAGS) -g $(LIBS) $(LIBS2)
+	$(CC) -o $@ $^ $(CFLAGS) -g $(LIBS) $(LIBS)
 
 .PHONY: clean
 
