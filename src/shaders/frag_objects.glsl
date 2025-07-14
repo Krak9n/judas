@@ -6,6 +6,7 @@ out vec4 outColor;
 
 void main()
 {
-// linearly interpolate between both textures (80% container, 20% awesomeface)
+  
+  // linearly interpolate between both textures (80% container, 20% awesomeface)
   outColor = exColor;
 }

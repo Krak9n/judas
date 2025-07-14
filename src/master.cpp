@@ -2,7 +2,6 @@
 #include <GLFW/glfw3.h>
 
 #include <math.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <chrono>
 
@@ -23,6 +22,8 @@
 struct integers
 {
   unsigned int VBO, VAO, EBO;
+  unsigned int lightVAO;
+  unsigned int VBO_plane, VAO_plane, EBO_plane;
 } INTs;
 
 struct loggs1
@@ -36,8 +37,8 @@ const unsigned int height = 900;
 const unsigned int width = 1500;
 
 /* CAMERA */
-glm::vec3 cameraPos   = glm::vec3(0.0f, 0.0f,  3.0f);
-glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+glm::vec3 cameraPos   = glm::vec3(0.0f, 0.1f,  3.0f);
+glm::vec3 cameraFront = glm::vec3(0.0f, 0.1f, -1.0f);
 glm::vec3 cameraUp    = glm::vec3(0.0f, 1.0f,  0.0f);
 
 bool firstMouse = true;
@@ -70,20 +71,42 @@ unsigned int indices[] =
 
 };
 
+// vector for triangles
 glm::vec3 posTriangles[] = 
 {
   glm::vec3( 0.0f,  0.0f,  0.0f),
   glm::vec3( 2.0f,  5.0f, -15.0f),
-  glm::vec3(-1.5f, -2.2f, -2.5f),
-  glm::vec3(-3.8f, -2.0f, -12.3f),
-  glm::vec3( 2.4f, -0.4f, -3.5f),
+  glm::vec3(-1.5f, 4.2f, -2.5f),
+  glm::vec3(-3.8f, 2.0f, -12.3f),
+  glm::vec3( 2.4f, 0.4f, -3.5f),
   glm::vec3(-1.7f,  3.0f, -7.5f),
-  glm::vec3( 1.3f, -2.0f, -2.5f),
-  glm::vec3( 1.5f,  2.0f, -2.5f),
+  glm::vec3( 1.3f, 7.0f, -2.5f),
+  glm::vec3( 1.5f,  2.6f, -2.5f),
   glm::vec3( 1.5f,  0.2f, -1.5f),
   glm::vec3(-1.3f,  1.0f, -1.5f)
 };
+
+float plane_coordinates[] = 
+{
+  // top one
+  // coordinate     // color
+  5.0f, 0.0f, 5.0f,  //far right 
+  -5.0f, 0.0f, 5.0f, //far left
+  -5.0f, 0.0f, -5.0f, //close left
+  5.0f, 0.0f, -5.0f, //close right
+
+};
+
+unsigned int pl_ind[] = 
+{
+  0, 1, 2, 
+  0, 2, 3,
+};
+
 /* ------------------- */
+
+// lightning
+glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
 
 void init_glfw();
 void processInput(GLFWwindow *window);
@@ -100,7 +123,12 @@ int main(int argc, char* argv[])
   init_glfw();
   
   // Create an application window with the following settings:
-  GLFWwindow* window = glfwCreateWindow(height, width, "judas", NULL, NULL);  
+  GLFWwindow* window = glfwCreateWindow(
+      width, 
+      height, 
+      "judas", 
+      NULL, 
+      NULL);  
   if(window == NULL)
   {
     std::cout << "failed to create glfw\n";
@@ -109,7 +137,7 @@ int main(int argc, char* argv[])
   }
   glfwMakeContextCurrent(window);
   glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-  glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+  glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
   // to be notified when cursor moves over the window
   glfwSetCursorPosCallback(window, cursor_position_callback);
@@ -127,14 +155,15 @@ int main(int argc, char* argv[])
   // configure global opengl state
   // -----------------------------
   glEnable(GL_DEPTH_TEST);
-  Shader myShader("src/shaders/vert.glsl", "src/shaders/frag.glsl");
-  
+  Shader objectsShader("src/shaders/vert_objects.glsl", "src/shaders/frag_objects.glsl");
+  Shader light("src/shaders/vert_light.glsl", "src/shaders/frag_light.glsl");
+
   //binding all three vao, ebo and vbo
   glGenVertexArrays(1, &INTs.VAO);
   glGenBuffers(1, &INTs.EBO);
   glGenBuffers(1, &INTs.VBO);
   
-  //drawing two triangles
+  //drawing triangles
   glBindVertexArray(INTs.VAO);
   glBindBuffer(GL_ARRAY_BUFFER, INTs.VBO);
   glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
@@ -148,9 +177,24 @@ int main(int argc, char* argv[])
   //color of vertices
   glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3* sizeof(float)));
   glEnableVertexAttribArray(1);
+  /* ---------------- */
+
+  //plane
+  /* ---------------- */
+  glGenVertexArrays(1, &INTs.VAO_plane);
+  glGenBuffers(1, &INTs.EBO_plane);
+  glGenBuffers(1, &INTs.VBO_plane);
   
-  //init_shaders();
-  myShader.use();
+  //drawing 
+  glBindVertexArray(INTs.VAO_plane);
+  glBindBuffer(GL_ARRAY_BUFFER, INTs.VBO_plane);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(plane_coordinates), plane_coordinates, GL_STATIC_DRAW);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, INTs.EBO_plane);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(pl_ind), pl_ind, GL_STATIC_DRAW);
+
+  //postions
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+  glEnableVertexAttribArray(0);
   
   while (!glfwWindowShouldClose(window)) 
   {
@@ -162,26 +206,41 @@ int main(int argc, char* argv[])
     
     glClearColor(0,0,0,1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    
-    myShader.use();
+
+    light.use();
+    light.setVec3("objectColor", 1.0f, 0.5f, 0.31f);
+    light.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
+    light.setVec3("lightPos", lightPos);
+
     
     glm::mat4 projection = glm::perspective(glm::radians(fov), (float)(width/height), 0.1f, 100.0f);
-    myShader.setMat4("projection", projection); 
-
-    // rotating stuff 
     glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
-    myShader.setMat4("view", view);
+    
+    light.setMat4("projection", projection);
+    light.setMat4("view", view);
 
-    // render 
+    glm::mat4 model = glm::mat4(1.0f);
+    light.setMat4("model", model);    
+
+    /* THE PLANE */
+    glBindVertexArray(INTs.VAO_plane);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+    objectsShader.use();
+    objectsShader.setMat4("projection", projection); 
+    objectsShader.setMat4("view", view);
+    
+    // render triangles
     glBindVertexArray(INTs.VAO); 
     for (unsigned int i = 0; i < 10; i++)
     {
       // calculate the model matrix for each object and pass it to shader before drawing
       glm::mat4 model = glm::mat4(1.0f);
       model = glm::translate(model, posTriangles[i]);
+      model = glm::translate(model, lightPos);
       float angle = 20.0f + i;
       model = glm::rotate(model, (float)(glfwGetTime() + i) * glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
-      myShader.setMat4("model", model);
+      objectsShader.setMat4("model", model);
 
       glDrawElements(GL_TRIANGLES, 12, GL_UNSIGNED_INT, 0);
     }
@@ -304,5 +363,3 @@ void init_glfw()
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
 }
-
-

@@ -1,0 +1,10 @@
+make a text rendering. 
+smhw put it in the another file
+connect through small header
+
+some experiments with pixelarsation would be nice
+
+make hard surface for moving
+
+
+chaning directory on making small engine for handling pixel 3d
