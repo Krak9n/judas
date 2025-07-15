@@ -2,11 +2,12 @@
 #include "utils.h"
 
 int main() {
-  brainfuck::first app{};
+  brainfuck::HandleWindow app;
+  Shader("src/shaders/vulkan_stuff/vulkan.vert", "src/shaders/vulkan_stuff/vulkan.frag");
 
   try 
   {
-    app.run();
+    app.start();
   } 
   catch (const std::exception &e) 
   {

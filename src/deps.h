@@ -4,7 +4,7 @@
 #include <GLFW/glfw3.h>
 
 #define NK_IMPLEMENTATION
-#include "ui/nuklear/nuklear.h"
+#include "nuklear/nuklear.h"
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -12,4 +12,5 @@
 #include <glm/mat4x4.hpp>
 
 #include <glm/glm.hpp>
-#include "window/first.hpp"
+#include "window/window.hpp"
+#include "shaders/vulkan_stuff/include_shader.hpp"
