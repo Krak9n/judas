@@ -3,8 +3,8 @@
 
 int main() {
   brainfuck::HandleWindow app;
-  Shader("src/shaders/vulkan_stuff/vulkan.vert", "src/shaders/vulkan_stuff/vulkan.frag");
-
+  shader::Shader myShader("src/shaders/vulkan_stuff/vulkan.vert.spv", "src/shaders/vulkan_stuff/vulkan.frag.spv");
+  
   try 
   {
     app.start();
