@@ -1,0 +1,2 @@
+rewrite main project compilation to premake or cmake
+mainly will be use for automatic shader recompilation

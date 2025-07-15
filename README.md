@@ -1,3 +1,3 @@
-### small videogame 
+### small videogame engine
 currently in process of development. 
-mainly with opengl
+made with ogl, vulkan and lack of love
