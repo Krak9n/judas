@@ -5,7 +5,7 @@ int main() {
   brainfuck::HandleWindow app;
   shader::Shader myShader("src/shaders/vulkan_stuff/vulkan.vert.spv", "src/shaders/vulkan_stuff/vulkan.frag.spv");
   
-  try 
+   try 
   {
     app.start();
   } 
@@ -14,7 +14,7 @@ int main() {
     std::cerr << e.what() << '\n';
     return 1;
   }
-
+  
   return 0;
 }
 
