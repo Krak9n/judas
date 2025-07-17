@@ -1,4 +1,5 @@
 #include "utils.h"
+#include "deps.h"
 
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
@@ -64,6 +65,7 @@ namespace brainfuck
       while (!glfwWindowShouldClose(window)) 
       {
         glfwPollEvents();
+        
       }
     }
 
