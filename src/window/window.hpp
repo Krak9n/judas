@@ -1,8 +1,53 @@
 #include "utils.h"
 #include "deps.h"
 
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_glfw.h"
+#include "imgui/imgui_impl_vulkan.h"
+
+// Volk headers
+#ifdef IMGUI_IMPL_VULKAN_USE_VOLK
+#define VOLK_IMPLEMENTATION
+#include <volk/volk.h>
+#endif
+
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
+
+/* VALIDATION LAYERS */
+// -----------------
+const std::vector<const char*> validationLayers = 
+{
+  "VK_LAYER_KHRONOS_validation"
+};
+
+#ifdef NDEBUG
+const bool enableValidationLayers = false;
+#else
+const bool enableValidationLayers = true;
+#endif
+
+VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) 
+{
+    auto func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+    if (func != nullptr) 
+    {
+        return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
+    } else 
+    {
+        return VK_ERROR_EXTENSION_NOT_PRESENT;
+    }
+}
+
+void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator) 
+{
+    auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+    if (func != nullptr) 
+    {
+        func(instance, debugMessenger, pAllocator);
+    }
+}
+// -----------------------------
 
 namespace brainfuck
 {
@@ -40,6 +85,11 @@ namespace brainfuck
     void initVulkan()
     {
       createInstance();
+    }
+
+    void imgui_usage()
+    {
+      ImGui::CreateContext();
     }
 
     void createInstance()
@@ -92,11 +142,16 @@ namespace brainfuck
 
     void mainLoop()
     {
+      imgui_usage();
+
       while (!glfwWindowShouldClose(window)) 
       {
         processInput(window);
         glfwPollEvents();
         
+        ImGui::Begin("Window A");
+        ImGui::Text("This is window A");
+        ImGui::End();
       }
     }
 
