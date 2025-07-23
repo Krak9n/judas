@@ -1,50 +1,85 @@
-extern crate glfw;
+#![allow(
+    dead_code,
+    unused_variables,
+    clippy::too_many_arguments,
+    clippy::unnecessary_wraps
+)]
 
-use glfw::{Action, Context, Key};
+extern crate sdl3;
+
+use winit::keyboard::{*};
+use winit::dpi::LogicalSize;
+use winit::event::{Event, WindowEvent};
+use winit::event_loop::EventLoop;
+use winit::window::{Window, WindowBuilder};
+use anyhow::Result;
 
 static WIDTH: u32 = 1500;
 static HEIGHT: u32 = 900;
+static TITLE: &str = "judas";
 
-fn main() 
+pub fn main() -> Result<(), Box<dyn std::error::Error>>
 {
-   use glfw::fail_on_errors;
+    pretty_env_logger::init();
 
-let mut glfw = glfw::init(fail_on_errors!()).unwrap();
-
-    // Create a windowed mode window and its OpenGL context
-    let (mut window, events) = glfw.create_window(
-        WIDTH,
-        HEIGHT,
-        "Hello this is window",
-        glfw::WindowMode::Windowed)
-    .expect("Failed to create GLFW window.");
-
-    glfw.window_hint(glfw::WindowHint::Resizable(false));    
+    /* WINDOW */
+    // -------------
+    let event_loop = EventLoop::new()?;
     
-    // Make the window's context current
-    window.make_current();
-    window.set_key_polling(true);
+    let window = WindowBuilder::new()
+        .with_title(TITLE)
+        .with_inner_size(LogicalSize::new(WIDTH, HEIGHT))
+        .build(&event_loop)?;
+    // ----------------
 
-    // Loop until the user closes the window
-    while !window.should_close() 
+    let app = unsafe
+    { 
+        Works::create(&window).unwrap() 
+    };
+   
+    event_loop.run(move |event, elwt| 
     {
-        // Swap front and back buffers
-        window.swap_buffers();
-
-        // Poll for and process events
-        glfw.poll_events();
-        for (_, event) in glfw::flush_messages(&events) 
-        {
-            println!("{:?}", event);
-            // switch
-            match event 
-            {
-                glfw::WindowEvent::Key(Key::Escape, _, Action::Press, _) => {
-                    window.set_should_close(true)
-                },
-                _ => {},
+        match event {
+            // Request a redraw when all events were processed.
+            Event::AboutToWait => window.request_redraw(),
+            Event::WindowEvent { event, .. } => match event {
+                // Render a frame if our Vulkan app is not being destroyed.
+                WindowEvent::RedrawRequested if !elwt.exiting() => unsafe { Works::render(&mut Works {}, &window) }.unwrap(),
+                // Destroy our Vulkan app.
+                WindowEvent::CloseRequested => {
+                    elwt.exit();
+                    unsafe { Works::destroy(&mut Works {}); }
+                }
+                _ => {}
             }
+            _ => {}
         }
-    }
+    })?;
+
+    Ok(())
 }
 
+#[derive(Clone, Debug)]
+struct Works {}
+
+impl Works
+{
+    /// Creates our Vulkan app.
+    unsafe fn create(window: &Window) -> Result<Self> 
+    {
+        Ok(Self {})
+    }
+
+    /// Renders a frame for our Vulkan app.
+    unsafe fn render(&mut self, window: &Window) -> Result<()> 
+    {
+        Ok(())
+    }
+
+    /// Destroys our Vulkan app.
+    unsafe fn destroy(&mut self) {}
+}
+
+/// The Vulkan handles and associated properties used by our Vulkan app.
+#[derive(Clone, Debug, Default)]
+struct AppData {}

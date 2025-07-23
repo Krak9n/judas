@@ -4,6 +4,20 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+anyhow = "1" #simple error handling
+log = "0.4" #for logging statements
+cgmath = "0.18" #glm library 
+png = "0.17" #for pngs as textures
+pretty_env_logger = "0.5" #printing logs
+thiserror = "1" #defining custom errors
+tobj = { version = "3", features = ["log"] } #for loading 3d models
+vulkanalia = { version = "=0.29.0", features = ["libloading", "provisional", "window"] } #calling vulkan api
+keybinds = "0.2.0"
+serde = "1.0.219"
 
-[dependencies.glfw]
+[dependencies.winit]
+version = "0.29"
+
+### sdl3 for window handling
+[dependencies.sdl3]
 version = "*"
