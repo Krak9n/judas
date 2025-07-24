@@ -7,12 +7,21 @@
 
 extern crate sdl3;
 
-use winit::keyboard::{*};
+use log::*;
+
+use imgui::*;
+
+use winit::keyboard::*;
 use winit::dpi::LogicalSize;
 use winit::event::{Event, WindowEvent};
 use winit::event_loop::EventLoop;
 use winit::window::{Window, WindowBuilder};
-use anyhow::Result;
+
+use anyhow::{anyhow, Result};
+
+use vulkanalia::loader::{LibloadingLoader, LIBRARY};
+use vulkanalia::window as vk_window;
+use vulkanalia::prelude::v1_0::*;
 
 static WIDTH: u32 = 1500;
 static HEIGHT: u32 = 900;
@@ -36,7 +45,9 @@ pub fn main() -> Result<(), Box<dyn std::error::Error>>
     { 
         Works::create(&window).unwrap() 
     };
-   
+
+    let mut value = 0;
+    
     event_loop.run(move |event, elwt| 
     {
         match event {
