@@ -4,22 +4,11 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-anyhow = "1" #simple error handling
-log = "0.4" #for logging statements
-cgmath = "0.18" #glm library 
-png = "0.17" #for pngs as textures
-pretty_env_logger = "0.5" #printing logs
-thiserror = "1" #defining custom errors
-tobj = { version = "3", features = ["log"] } #for loading 3d models
-vulkanalia = { version = "=0.29.0", features = ["libloading", "provisional", "window"] } #calling vulkan api
-
-imgui = { git = "https://github.com/imgui-rs/imgui-rs", version = "0.12", features = [
-    "tables-api",
-] }
-
-[dependencies.winit]
-version = "0.29"
-
-### sdl3 for window handling
-[dependencies.sdl3]
-version = "*"
+glad-gl = { path = "./src/support/build/glad-gl" }
+glfw = "0.59.0"
+# for casting plain data types
+bytemuck = "1"
+# png parser
+imagine = "0.0.5"
+# linear algebra 
+ultraviolet = { version = "0.9", features = [ "f64", "int" ] }
