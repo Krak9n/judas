@@ -2,5 +2,12 @@
 name = "judas"
 version = "0.1.0"
 edition = "2024"
+author = "eto"
+description = "Small card game made by myself for myself."
+license = "MIT"
 
 [dependencies]
+bevy = "0.19"
+
+[profile.dev]
+opt-level = 1
