@@ -2,7 +2,7 @@
 name = "judas"
 version = "0.1.0"
 edition = "2024"
-author = "eto"
+authors = ["eto"]
 description = "Small card game made by myself for myself."
 license = "MIT"
 

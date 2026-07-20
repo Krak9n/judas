@@ -1,6 +1,4 @@
 mod logic;
-use logic::{table, card}; 
+use logic::table;
 
-fn main() {
-    println!("Hello, world!");
-}
+fn main() {}
